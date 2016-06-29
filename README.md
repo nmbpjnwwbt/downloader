@@ -5,7 +5,7 @@ downloads files and en/decrypts it
 instruction:
 keys in display mode:
 
-h=http request
+h=http request (SFML doesn`t support https)
 
 d=decrypt from disc
 
@@ -17,3 +17,5 @@ keys in other modes:
 TODO:
 
 c-clear screen
+
+f-ftp request
