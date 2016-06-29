@@ -313,7 +313,7 @@ int main()
                 lastpos.y=event.mouseMove.y;
             }
             if(event.type==sf::Event::MouseWheelMoved){
-                float delta=(float(event.mouseWheel.delta+1)*0.422222222222)+0.666666666666;cout<<delta;
+                float delta=(float(event.mouseWheel.delta+1)*0.422222222222)+0.666666666666;
                 spriteScale*=delta;
                 sprite.setScale(spriteScale, spriteScale);
                 sprite.setPosition(sprite.getPosition().x-((event.mouseWheel.x-sprite.getPosition().x)*delta-(event.mouseWheel.x-sprite.getPosition().x)), sprite.getPosition().y-((event.mouseWheel.y-sprite.getPosition().y)*delta-(event.mouseWheel.y-sprite.getPosition().y)));
