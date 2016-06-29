@@ -41,7 +41,7 @@ void destruct(string track, string &input){cout<<"\b\b\b";
 
 sf::RenderWindow window(sf::VideoMode(1200, 720), "downloader");
 sf::Event event;
-enum modes{urltyping, displaying, passwording, answering, writting};
+enum modes{urltyping, displaying, passwording, answering, writting, ftpconnect};
 enum crypt{de, en};
 enum answers{t, n, wait};
 modes mode=displaying;
@@ -53,7 +53,8 @@ float spriteScale=1;
 sf::Vector2f lastpos;
 sf::Texture texture;
 sf::Sprite sprite;
-
+sf::Ftp ftp;
+sf::Ftp::Response ftpresponse;
 
 int main()
 {
@@ -71,6 +72,9 @@ int main()
                     system("title displaying");
                     url=uri=key=filename=filebody=buffer="";
                 }
+                if(event.text.unicode==99){
+                    system("cls");
+                }
                 if((event.text.unicode==116)||(event.text.unicode==49)||(event.text.unicode==121)||(event.text.unicode==84)||(event.text.unicode==89)||(event.text.unicode==13)||(event.text.unicode==111)||(event.text.unicode==79)){
                     answer=t;
                 }else if((event.text.unicode==110)||(event.text.unicode==78)||(event.text.unicode==48)||(event.text.unicode==32)){
@@ -79,53 +83,64 @@ int main()
 
                 if(mode==urltyping){
                     if(event.text.unicode==13){
-                        if((url.find("http://"))&&(url.find("https://"))){
-                            if(!url.find("www."))url="http://"+url;
-                            else url="http://www."+url;
-                        }
-                        if(url.find('/', 9)<100000){
-                            uri=url;
-                            uri.erase(0, url.find('/', 9));
-                            url.erase(url.find('/', 9), url.length());
-                        }
-                        sf::Http http;//---------------------------------------------------http(s) request------------------------------------------------
-                        http.setHost(url);
-                        sf::Http::Request request(uri);
-                        sf::Http::Response response=http.sendRequest(request);
-                        if(response.getStatus()==sf::Http::Response::Ok){
-                            while(1){
-                                cout<<"\ntype name \\/\n";
-                                mode=passwording;
-                                system("title passwording");
-                                filebody=response.getBody();
-                                if(uri.length()>4)uri.erase(0, uri.length()-4);
-                                if(uri==".jpg"){
-                                    save("example.jpg", filebody);
-                                    texture.loadFromFile("example.jpg");
-                                    destruct("example.jpg", filebody);//http://www.programmingsimplified.com/images/c/delete-file-c.png
-                                    sprite.setTexture(texture);
-                                    break;
-                                }else
-                                if(uri==".png"){
-                                    save("example.png", filebody);
-                                    texture.loadFromFile("example.png");
-                                    destruct("example.png", filebody);
-                                    sprite.setTexture(texture);
-                                    break;
-                                }else{
-                                    mode=writting;
-                                    system("title writting");
-                                    towrite=filebody;
-                                }
-                            break;
+                        if(!url.find("ftpconnect")){
+                            mode=ftpconnect;
+                            system("title ftp");
+                            ftpresponse=ftp.connect(url);
+                            if(ftpresponse.isOk()){
+                                cout<<"\nconnected";
+                            }else{
+                                cout<<"\nconnection error, try again\n";
                             }
                         }else{
-                            cout<<response.getStatus();
-                            cout<<response.getBody();
-                        }
-                        if(mode!=passwording){
-                            mode=displaying;
-                            system("\ntitle displaying");
+                            if((url.find("http://"))&&(url.find("https://"))){
+                                if(!url.find("www."))url="http://"+url;
+                                else url="http://www."+url;
+                            }
+                            if(url.find('/', 9)<100000){
+                                uri=url;
+                                uri.erase(0, url.find('/', 9));
+                                url.erase(url.find('/', 9), url.length());
+                            }
+                            sf::Http http;//---------------------------------------------------http(s) request------------------------------------------------
+                            http.setHost(url);
+                            sf::Http::Request request(uri);
+                            sf::Http::Response response=http.sendRequest(request);
+                            if(response.getStatus()==sf::Http::Response::Ok){
+                                while(1){
+                                    cout<<"\ntype name \\/\n";
+                                    mode=passwording;
+                                    system("title passwording");
+                                    filebody=response.getBody();
+                                    if(uri.length()>4)uri.erase(0, uri.length()-4);
+                                    if(uri==".jpg"){
+                                        save("example.jpg", filebody);
+                                        texture.loadFromFile("example.jpg");
+                                        destruct("example.jpg", filebody);//http://www.programmingsimplified.com/images/c/delete-file-c.png
+                                        sprite.setTexture(texture);
+                                        break;
+                                    }else
+                                    if(uri==".png"){
+                                        save("example.png", filebody);
+                                        texture.loadFromFile("example.png");
+                                        destruct("example.png", filebody);
+                                        sprite.setTexture(texture);
+                                        break;
+                                    }else{
+                                        mode=writting;
+                                        system("title writting");
+                                        towrite=filebody;
+                                    }
+                                break;
+                                }
+                            }else{
+                                cout<<response.getStatus();
+                                cout<<response.getBody();
+                            }
+                            if(mode!=passwording){
+                                mode=displaying;
+                                system("\ntitle displaying");
+                            }
                         }
                         uri=url="";
                     }else
@@ -194,7 +209,8 @@ int main()
                                     for(int i=0; i<seci; i++){
                                         buffer[i]=buffer[i]^(rand()%256);
                                     }
-                                    filename="decrypted_"+filename;
+                                    if(filename.rfind('\\')==4294967295) filename="decrypted_"+filename;
+                                    else filename.insert(filename.rfind('\\')+1, "decrypted_");
                                     save(filename, buffer);
                                     if(texture.loadFromFile(filename)){
                                         sprite.setTexture(texture);
@@ -205,8 +221,11 @@ int main()
                                         system("title writting");
                                         towrite=buffer;
                                     }
-                                }else
+                                }else{
                                     cout<<"\nfile loading error";
+                                    system("title displaying");
+                                    mode=displaying;
+                                }
                                 plik.close();
                             }
                         }else{
@@ -294,7 +313,7 @@ int main()
                 lastpos.y=event.mouseMove.y;
             }
             if(event.type==sf::Event::MouseWheelMoved){
-                float delta=((event.mouseWheel.delta+1)>>1)+0.75;
+                float delta=(float(event.mouseWheel.delta+1)*0.422222222222)+0.666666666666;cout<<delta;
                 spriteScale*=delta;
                 sprite.setScale(spriteScale, spriteScale);
                 sprite.setPosition(sprite.getPosition().x-((event.mouseWheel.x-sprite.getPosition().x)*delta-(event.mouseWheel.x-sprite.getPosition().x)), sprite.getPosition().y-((event.mouseWheel.y-sprite.getPosition().y)*delta-(event.mouseWheel.y-sprite.getPosition().y)));
