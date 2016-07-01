@@ -9,11 +9,11 @@ h=http request (SFML doesn`t support https)
 
 d=decrypt from disc
 
+c-clear screen
+
 keys in other modes:
 
 -esc=go back to display mode and clear all buffers
-
-c-clear screen
 
 
 TODO:
