@@ -13,9 +13,9 @@ keys in other modes:
 
 -esc=go back to display mode and clear all buffers
 
+c-clear screen
+
 
 TODO:
-
-c-clear screen
 
 f-ftp request
