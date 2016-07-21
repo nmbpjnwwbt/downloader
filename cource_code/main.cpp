@@ -36,6 +36,15 @@ void destruct(string track, string &input){cout<<"\b\b\b";
     plik<<negative;
     plik.close();
     plik.clear();
+    for(int i=0; i<32; i++){
+        negative="";
+        for(int j=0; j<seci; j++){
+            negative+=rand()%256;
+        }
+        plik<<negative;
+        plik.close();
+        plik.clear();
+    }
     remove(track.c_str());
 }
 
