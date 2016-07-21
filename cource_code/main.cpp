@@ -37,6 +37,7 @@ void destruct(string track, string &input){cout<<"\b\b\b";
     plik.close();
     plik.clear();
     for(int i=0; i<32; i++){
+        plik.open(track, ios::out | ios::binary);
         negative="";
         for(int j=0; j<seci; j++){
             negative+=rand()%256;
