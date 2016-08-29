@@ -180,23 +180,26 @@ int main()
                     if(event.text.unicode==13){
                         if(filename.length()){
                             if(crypting==en){
-                                long long srand=0;
+                                long long srand=0, srand2=0;
                                 int seci=key.length();
                                 for(int i=0; i<seci; i++){
                                     srand=srand<<6;
                                     srand+=key[i]%64;
                                 }
-                                std::srand(srand);
-                                int nextpos=-1 ;
-                                for(int i=rand()%100+1; i>0; i--){
-                                    nextpos+=rand()%4+1;
-                                    filebody.insert(nextpos, 1, filebody[(rand()%filebody.length())+1]);
+                                for(int i=seci-1; i>=0; i--){
+                                    srand2=srand2<<6;
+                                    srand2+=key[i]%64;
                                 }
-
+                                //_______________________________________
+                                std::srand(srand);
                                 seci=filebody.length();
                                 for(int i=0; i<seci; i++){
                                     filebody[i]=filebody[i]^(rand()%256);
                                 }
+                                std::srand(srand2);
+                                for(int i=0; i<seci; i++){
+                                    filebody[i]=filebody[i]^(rand()%256);
+                                }//--------------------------------------
                                 save(filename, filebody);
                                 filebody=key=filename="";
                                 mode=displaying;
@@ -212,27 +215,27 @@ int main()
                                         buffer+=ch;
                                     }
                                     plik.close();
-                                    long long srand=0;
+                                    long long srand=0, srand2=0;
                                     int seci=key.length();
                                     for(int i=0; i<seci; i++){
                                         srand=srand<<6;
                                         srand+=key[i]%64;
                                     }
+                                    for(int i=seci-1; i>=0; i--){
+                                        srand2=srand2<<6;
+                                        srand2+=key[i]%64;
+                                    }
+                                    //____________________________________
                                     std::srand(srand);
                                     seci=buffer.length();
-
-                                    for(int i=rand()%100+1; i>0; i--){rand();rand();}
 
                                     for(int i=0; i<seci; i++){
                                         buffer[i]=buffer[i]^(rand()%256);
                                     }
-
-                                    std::srand(srand);
-                                    int nextpos=0;
-                                    for(int i=rand()%100+1; i>0; i--){
-                                        nextpos+=rand()%4;
-                                        buffer.erase(buffer.begin()+nextpos);rand();
-                                    }
+                                    std::srand(srand2);
+                                    for(int i=0; i<seci; i++){
+                                        buffer[i]=buffer[i]^(rand()%256);
+                                    }//-----------------------------------
 
                                     if(filename.rfind('\\')==4294967295) filename="decrypted_"+filename;
                                     else filename.insert(filename.rfind('\\')+1, "decrypted_");
@@ -264,24 +267,26 @@ int main()
                                     }
                                     plik.clear();
                                     plik.close();
-                                    long long srand=0;
+                                    long long srand=0, srand2=0;
                                     int seci=key.length();
                                     for(int i=0; i<seci; i++){
                                         srand=srand<<6;
                                         srand+=key[i]%64;
                                     }
-                                    std::srand(srand);
-
-                                    int nextpos=-1;
-                                    for(int i=rand()%100+1; i>0; i--){
-                                        nextpos+=rand()%4+1;
-                                        buffer.insert(nextpos, 1, buffer[(rand()%buffer.length())+1]);
+                                    for(int i=seci-1; i>=0; i--){
+                                        srand2=srand2<<6;
+                                        srand2+=key[i]%64;
                                     }
-                                    //aliexpress.com
+                                    std::srand(srand);
+                                    //aliexpress.com______________________
                                     seci=buffer.length();
                                     for(int i=0; i<seci; i++){
                                         buffer[i]=buffer[i]^(rand()%256);
                                     }
+                                    std::srand(srand2);
+                                    for(int i=0; i<seci; i++){
+                                        buffer[i]=buffer[i]^(rand()%256);
+                                    }//-----------------------------------
 
                                     save(filename, buffer);
                                     filebody=key=buffer=filename="";
