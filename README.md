@@ -20,3 +20,4 @@ keys in other modes:
 WARNING!
 Version older than from 29.8.2016 doesn't protect enought png files.
 
+Password containing more than 12 chars gives the same safety like 12 letters long.
