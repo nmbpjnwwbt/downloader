@@ -18,7 +18,7 @@ keys in other modes:
 -esc=go back to display mode and clear all buffers
 
 WARNING!
-Wersion older than 29.8.2016 does not protect enought png files.
+This program can not protect enought png files. Still need salt at end of file.
 
 TODO:
 
