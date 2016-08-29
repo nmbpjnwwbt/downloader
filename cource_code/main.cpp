@@ -52,7 +52,7 @@ void destruct(string track, string &input){cout<<"\b\b\b";
 sf::RenderWindow window(sf::VideoMode(1200, 720), "downloader");
 sf::Event event;
 enum modes{urltyping, displaying, passwording, answering, writting, ftpconnect};
-enum crypt{de, en};
+enum crypt{de, en, en_fromfile};
 enum answers{t, n, wait};
 modes mode=displaying;
 crypt crypting;
@@ -81,9 +81,6 @@ int main()
                     mode=displaying;
                     system("title displaying");
                     url=uri=key=filename=filebody=buffer="";
-                }
-                if(event.text.unicode==99){
-                    system("cls");
                 }
                 if((event.text.unicode==116)||(event.text.unicode==49)||(event.text.unicode==121)||(event.text.unicode==84)||(event.text.unicode==89)||(event.text.unicode==13)||(event.text.unicode==111)||(event.text.unicode==79)){
                     answer=t;
@@ -190,6 +187,12 @@ int main()
                                     srand+=key[i]%64;
                                 }
                                 std::srand(srand);
+                                int nextpos=-1 ;
+                                for(int i=rand()%100+1; i>0; i--){
+                                    nextpos+=rand()%4+1;
+                                    filebody.insert(nextpos, 1, filebody[(rand()%filebody.length())+1]);
+                                }
+
                                 seci=filebody.length();
                                 for(int i=0; i<seci; i++){
                                     filebody[i]=filebody[i]^(rand()%256);
@@ -198,7 +201,8 @@ int main()
                                 filebody=key=filename="";
                                 mode=displaying;
                                 system("title displaying");
-                            }else{
+                            }else
+                            if(crypting==de){
                                 fstream plik;
                                 plik.open(filename, std::ios::in | std::ios::binary);
                                 if(plik.good()){
@@ -216,9 +220,20 @@ int main()
                                     }
                                     std::srand(srand);
                                     seci=buffer.length();
+
+                                    for(int i=rand()%100+1; i>0; i--){rand();rand();}
+
                                     for(int i=0; i<seci; i++){
                                         buffer[i]=buffer[i]^(rand()%256);
                                     }
+
+                                    std::srand(srand);
+                                    int nextpos=0;
+                                    for(int i=rand()%100+1; i>0; i--){
+                                        nextpos+=rand()%4;
+                                        buffer.erase(buffer.begin()+nextpos);rand();
+                                    }
+
                                     if(filename.rfind('\\')==4294967295) filename="decrypted_"+filename;
                                     else filename.insert(filename.rfind('\\')+1, "decrypted_");
                                     save(filename, buffer);
@@ -233,10 +248,51 @@ int main()
                                     }
                                 }else{
                                     cout<<"\nfile loading error";
+                                    filebody=key=buffer=filename="";
                                     system("title displaying");
                                     mode=displaying;
                                 }
                                 plik.close();
+                            }else{//crypting==en_fromfile
+                                fstream plik;
+                                plik.open(filename, std::ios::in | std::ios::binary);
+                                if(plik.good()){
+                                    buffer="";
+                                    char ch;
+                                    while(plik>>noskipws>>ch){
+                                        buffer+=ch;
+                                    }
+                                    plik.clear();
+                                    plik.close();
+                                    long long srand=0;
+                                    int seci=key.length();
+                                    for(int i=0; i<seci; i++){
+                                        srand=srand<<6;
+                                        srand+=key[i]%64;
+                                    }
+                                    std::srand(srand);
+
+                                    int nextpos=-1;
+                                    for(int i=rand()%100+1; i>0; i--){
+                                        nextpos+=rand()%4+1;
+                                        buffer.insert(nextpos, 1, buffer[(rand()%buffer.length())+1]);
+                                    }
+                                    //aliexpress.com
+                                    seci=buffer.length();
+                                    for(int i=0; i<seci; i++){
+                                        buffer[i]=buffer[i]^(rand()%256);
+                                    }
+
+                                    save(filename, buffer);
+                                    filebody=key=buffer=filename="";
+                                    mode=displaying;
+                                    system("title displaying");
+                                }else{
+                                    cout<<"\nfile loading error";
+                                    filebody=key=buffer=filename="";
+                                    system("title displaying");
+                                    mode=displaying;
+                                }
                             }
                         }else{
                             filename=key;
@@ -293,9 +349,18 @@ int main()
                         system("title displaying");
                     }
                 }else
+                if(mode==ftpconnect){
+
+                }else
                 if(event.text.unicode==100){
                     mode=passwording;
                     crypting=de;
+                    cout<<"\ntype name\\/\n";
+                    system("title passwording");
+                }else
+                if(event.text.unicode==101){
+                    mode=passwording;
+                    crypting=en_fromfile;
                     cout<<"\ntype name\\/\n";
                     system("title passwording");
                 }else
@@ -304,6 +369,9 @@ int main()
                     mode=urltyping;
                     crypting=en;
                     system("title urltyping");
+                }else
+                if(event.text.unicode==99){
+                    system("cls");
                 }else
                 if((event.text.unicode==114)||(event.text.unicode==82)){
                     spriteScale=1;
