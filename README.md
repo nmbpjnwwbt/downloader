@@ -18,10 +18,5 @@ keys in other modes:
 -esc=go back to display mode and clear all buffers
 
 WARNING!
-This program can not protect enought png files. Still need salt at end of file.
+Version older than from 29.8.2016 doesn't protect enought png files.
 
-TODO:
-
-Add salt at end of file.
-
-f-ftp request
