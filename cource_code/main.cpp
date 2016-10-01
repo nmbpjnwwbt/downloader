@@ -6,6 +6,10 @@
 #include <fstream>
 #include <curl/curl.h>
 
+
+//I know, that`s spaghetti
+
+
 using namespace std;
 
 void getCursor(int &x, int&y) {
@@ -121,16 +125,12 @@ int main()
                                     filebody=response.getBody();
                                     if(uri.length()>4)uri.erase(0, uri.length()-4);
                                     if(uri==".jpg"){
-                                        save("example.jpg", filebody);
-                                        texture.loadFromFile("example.jpg");
-                                        destruct("example.jpg", filebody);//http://www.programmingsimplified.com/images/c/delete-file-c.png
+                                        texture.loadFromMemory(&filebody[0], filebody.length());//http://www.programmingsimplified.com/images/c/delete-file-c.png
                                         sprite.setTexture(texture);
                                         break;
                                     }else
                                     if(uri==".png"){
-                                        save("example.png", filebody);
-                                        texture.loadFromFile("example.png");
-                                        destruct("example.png", filebody);
+                                        texture.loadFromMemory(&filebody[0], filebody.length());
                                         sprite.setTexture(texture);
                                         break;
                                     }else{
@@ -237,18 +237,23 @@ int main()
                                         buffer[i]=buffer[i]^(rand()%256);
                                     }//-----------------------------------
 
+                                    sprite.setTexture(texture);
+
                                     if(filename.rfind('\\')==4294967295) filename="decrypted_"+filename;
                                     else filename.insert(filename.rfind('\\')+1, "decrypted_");
-                                    save(filename, buffer);
-                                    if(texture.loadFromFile(filename)){
+                                    if(texture.loadFromMemory(&buffer[0], buffer.length())){
                                         sprite.setTexture(texture);
-                                        cout<<"\ndestroy file?";
+                                        cout<<"\nsave file?";
                                         mode=answering;
                                     }else{
                                         mode=writting;
                                         system("title writting");
                                         towrite=buffer;
                                     }
+                                    filebody=key=buffer=filename="";
+                                    system("title displaying");
+                                    mode=displaying;
+
                                 }else{
                                     cout<<"\nfile loading error";
                                     filebody=key=buffer=filename="";
@@ -346,9 +351,10 @@ int main()
                 if(mode==answering){
                     if(answer!=wait){
                         if(answer==t){
-                            cout<<"\ndestructing\n";
-                            destruct(filename, buffer);
-                        }else cout<<"\nuntouched\n";
+                            cout<<"\nsaving...";
+                            save(filename, buffer);
+                        }
+                        cout<<"\nclearing buffers\n";
                         filename=key=buffer="";
                         mode=displaying;
                         system("title displaying");
