@@ -197,7 +197,7 @@ int main()
                                     filebody[i]=filebody[i]^(rand()%256);
                                 }
                                 std::srand(srand2);
-                                for(int i=0; i<seci; i++){
+                                for(int i=seci-1; i>=0; i--){
                                     filebody[i]=filebody[i]^(rand()%256);
                                 }//--------------------------------------
                                 save(filename, filebody);
@@ -233,7 +233,7 @@ int main()
                                         buffer[i]=buffer[i]^(rand()%256);
                                     }
                                     std::srand(srand2);
-                                    for(int i=0; i<seci; i++){
+                                    for(int i=seci-1; i>=0; i--){
                                         buffer[i]=buffer[i]^(rand()%256);
                                     }//-----------------------------------
 
@@ -284,7 +284,7 @@ int main()
                                         buffer[i]=buffer[i]^(rand()%256);
                                     }
                                     std::srand(srand2);
-                                    for(int i=0; i<seci; i++){
+                                    for(int i=seci-1; i>=0; i--){
                                         buffer[i]=buffer[i]^(rand()%256);
                                     }//-----------------------------------
 
