@@ -61,20 +61,65 @@ enum answers{t, n, wait};
 modes mode=displaying;
 crypt crypting;
 answers answer=wait;
-string url, uri, key, filename, filebody, buffer, towrite;
-bool mouseButton;
+string url, uri, key, filename, filebody, buffer, towrite, header;
+bool mouseButton, mask;
 float spriteScale=1;
 sf::Vector2f lastpos;
-sf::Texture texture;
-sf::Sprite sprite;
+sf::Texture texture, maskTexture, downloadingTexture, downloadTexture, deleteTexture, decryptTexture, decryptingTexture, encryptTexture, encryptingTexture, resetTexture;
+sf::Sprite sprite, maskSprite, downloadingSprite, downloadSprite, deleteSprite, decryptSprite, decryptingSprite, encryptSprite, encryptingSprite, resetSprite;
 sf::Ftp ftp;
 sf::Ftp::Response ftpresponse;
+sf::Font mainfont;
+sf::Text infotext;
+
+void resetbuffers(){
+    mode=displaying;
+    system("title displaying");
+    url=uri=key=filename=filebody=buffer="";
+    infotext.setString(header);
+}
 
 int main()
 {
-    system("color 0a");
-    system("title displaying");
-    sprite.setPosition(0,0);
+    {   system("color 0a");
+        system("title displaying");
+        sprite.setPosition(0,40);
+        maskTexture.loadFromFile("img/mask.png");
+        maskSprite.setTexture(maskTexture);
+        downloadTexture.loadFromFile("img/checkbox_download.bmp");
+        downloadSprite.setTexture(downloadTexture);
+        downloadSprite.setPosition(0,0);
+        downloadingTexture.loadFromFile("img/checkbox_downloading.bmp");
+        downloadingSprite.setTexture(downloadingTexture);
+        downloadingSprite.setPosition(0,0);
+        deleteTexture.loadFromFile("img/checkbox_delete.bmp");
+        deleteSprite.setTexture(deleteTexture);
+        deleteSprite.setPosition(40,0);
+        decryptTexture.loadFromFile("img/checkbox_decrypt.bmp");
+        decryptSprite.setTexture(decryptTexture);
+        decryptSprite.setPosition(80,0);
+        encryptTexture.loadFromFile("img/checkbox_encrypt.bmp");
+        encryptSprite.setTexture(encryptTexture);
+        encryptSprite.setPosition(120,0);
+        decryptingTexture.loadFromFile("img/checkbox_decrypting.bmp");
+        decryptingSprite.setTexture(decryptingTexture);
+        decryptingSprite.setPosition(80,0);
+        encryptingTexture.loadFromFile("img/checkbox_encrypting.bmp");
+        encryptingSprite.setTexture(encryptingTexture);
+        encryptingSprite.setPosition(120,0);
+        resetTexture.loadFromFile("img/checkbox_reset.bmp");
+        resetSprite.setTexture(resetTexture);
+        resetSprite.setPosition(160,0);
+        window.setFramerateLimit(30);
+        mainfont.loadFromFile("font.ttf");
+        infotext.setFont(mainfont);
+        infotext.setColor(sf::Color(0,255,0));
+        infotext.setCharacterSize(14);
+        infotext.setPosition(200, 0);
+        header="downloader v1.2 by Aleksander Czajka\npress k for key biddings\n\n";
+        infotext.setString(header);
+    }
+    cout<<header;
     while(window.isOpen()){
         while(window.pollEvent(event)){
             if(event.type==sf::Event::Closed){
@@ -82,9 +127,7 @@ int main()
             }
             if(event.type==sf::Event::TextEntered){
                 if(event.text.unicode==27){
-                    mode=displaying;
-                    system("title displaying");
-                    url=uri=key=filename=filebody=buffer="";
+                    resetbuffers();
                 }
                 if((event.text.unicode==116)||(event.text.unicode==49)||(event.text.unicode==121)||(event.text.unicode==84)||(event.text.unicode==89)||(event.text.unicode==13)||(event.text.unicode==111)||(event.text.unicode==79)){
                     answer=t;
@@ -118,35 +161,34 @@ int main()
                             sf::Http::Request request(uri);
                             sf::Http::Response response=http.sendRequest(request);
                             if(response.getStatus()==sf::Http::Response::Ok){
-                                while(1){
+                                filebody=response.getBody();
+                                if(uri.length()>4)uri.erase(0, uri.length()-4);
+                                if(uri==".jpg"){
+                                    texture.loadFromMemory(&filebody[0], filebody.length());//http://www.programmingsimplified.com/images/c/delete-file-c.png
+                                    sprite.setTexture(texture);
                                     cout<<"\ntype name \\/\n";
+                                    infotext.setString("name=");
                                     mode=passwording;
                                     system("title passwording");
-                                    filebody=response.getBody();
-                                    if(uri.length()>4)uri.erase(0, uri.length()-4);
-                                    if(uri==".jpg"){
-                                        texture.loadFromMemory(&filebody[0], filebody.length());//http://www.programmingsimplified.com/images/c/delete-file-c.png
-                                        sprite.setTexture(texture);
-                                        break;
-                                    }else
-                                    if(uri==".png"){
-                                        texture.loadFromMemory(&filebody[0], filebody.length());
-                                        sprite.setTexture(texture);
-                                        break;
-                                    }else{
-                                        mode=writting;
-                                        system("title writting");
-                                        towrite=filebody;
-                                    }
-                                break;
+                                    break;
+                                }else
+                                if(uri==".png"){
+                                    texture.loadFromMemory(&filebody[0], filebody.length());
+                                    sprite.setTexture(texture);
+                                    cout<<"\ntype name \\/\n";
+                                    infotext.setString("name=");
+                                    mode=passwording;
+                                    system("title passwording");
+                                    break;
+                                }else{
+                                    mode=writting;
+                                    system("title writting");
+                                    towrite=filebody;
+                                    infotext.setString("Unknown format. You can see text on the console.\nClick esc to reset or other button to display more.");
                                 }
                             }else{
                                 cout<<response.getStatus();
                                 cout<<response.getBody();
-                            }
-                            if(mode!=passwording){
-                                mode=displaying;
-                                system("\ntitle displaying");
                             }
                         }
                         uri=url="";
@@ -154,6 +196,8 @@ int main()
                     if(event.text.unicode==8){
                         if(url.length()){
                             url.erase(url.length()-1);
+                            buffer=infotext.getString();
+                            infotext.setString(buffer.erase(buffer.length()-1));
                             if(!((key.length()+1)%80)){
                                 int x, y;
                                 getCursor(x, y);
@@ -167,6 +211,9 @@ int main()
                     }else
                     if(event.text.unicode==9){
                         if(OpenClipboard(0)){
+                            buffer=infotext.getString();
+                            buffer+=(char*)(GetClipboardData(CF_TEXT));
+                            infotext.setString(buffer);
                             url+=(char*)(GetClipboardData(CF_TEXT));
                             cout<<(char*)(GetClipboardData(CF_TEXT));
                             CloseClipboard();
@@ -201,9 +248,7 @@ int main()
                                     filebody[i]=filebody[i]^(rand()%256);
                                 }//--------------------------------------
                                 save(filename, filebody);
-                                filebody=key=filename="";
-                                mode=displaying;
-                                system("title displaying");
+                                resetbuffers();
                             }else
                             if(crypting==de){
                                 fstream plik;
@@ -236,29 +281,17 @@ int main()
                                     for(int i=seci-1; i>=0; i--){
                                         buffer[i]=buffer[i]^(rand()%256);
                                     }//-----------------------------------
-
-                                    sprite.setTexture(texture);
-
-                                    if(filename.rfind('\\')==4294967295) filename="decrypted_"+filename;
-                                    else filename.insert(filename.rfind('\\')+1, "decrypted_");
                                     if(texture.loadFromMemory(&buffer[0], buffer.length())){
                                         sprite.setTexture(texture);
-                                        cout<<"\nsave file?";
-                                        mode=answering;
+                                        resetbuffers();
                                     }else{
                                         mode=writting;
                                         system("title writting");
                                         towrite=buffer;
                                     }
-                                    filebody=key=buffer=filename="";
-                                    system("title displaying");
-                                    mode=displaying;
-
                                 }else{
                                     cout<<"\nfile loading error";
-                                    filebody=key=buffer=filename="";
-                                    system("title displaying");
-                                    mode=displaying;
+                                    resetbuffers();
                                 }
                                 plik.close();
                             }else{//crypting==en_fromfile
@@ -294,25 +327,26 @@ int main()
                                     }//-----------------------------------
 
                                     save(filename, buffer);
-                                    filebody=key=buffer=filename="";
-                                    mode=displaying;
-                                    system("title displaying");
+                                    cout<<"\noverwrited\n";
+                                    resetbuffers();
                                 }else{
                                     cout<<"\nfile loading error";
-                                    filebody=key=buffer=filename="";
-                                    system("title displaying");
-                                    mode=displaying;
+                                    resetbuffers();
                                 }
                             }
+                            infotext.setString(header);
                         }else{
                             filename=key;
                             key="";
                             cout<<"\ntype password \\/\n";
+                            infotext.setString("password=");
                         }
                     }else
                     if(event.text.unicode==8){
                         if(key.length()){
-                            key.erase(key.length()-1);system(("title "+to_string(key.length())).c_str());
+                            key.erase(key.length()-1);          //system(("title "+to_string(key.length())).c_str());
+                            buffer=infotext.getString();
+                            infotext.setString(buffer.erase(buffer.length()-1));
                             if(!((key.length()+1)%80)){
                                 int x, y;
                                 getCursor(x, y);
@@ -326,11 +360,15 @@ int main()
                     }else
                     if(event.text.unicode==9){
                         if(OpenClipboard(0)){
+                            buffer=infotext.getString();
+                            buffer+=(char*)(GetClipboardData(CF_TEXT));
+                            infotext.setString(buffer);
                             key+=(char*)(GetClipboardData(CF_TEXT));
                             cout<<(char*)(GetClipboardData(CF_TEXT));
                             CloseClipboard();
                         }
                     }else{
+                        infotext.setString(infotext.getString()+char(event.text.unicode));
                         key+=char(event.text.unicode);
                         cout<<char(event.text.unicode);
                     }
@@ -366,27 +404,37 @@ int main()
                 if(event.text.unicode==100){
                     mode=passwording;
                     crypting=de;
-                    cout<<"\ntype name\\/\n";
+                    cout<<"\ndecrypting:\ntype name\\/\n";
+                    infotext.setString("name=");
                     system("title passwording");
                 }else
                 if(event.text.unicode==101){
                     mode=passwording;
                     crypting=en_fromfile;
-                    cout<<"\ntype name\\/\n";
+                    cout<<"\nencrypting from file:\ntype name\\/\n";
+                    infotext.setString("name=");
                     system("title passwording");
                 }else
                 if(event.text.unicode==104){
-                    cout<<"\n";
+                    cout<<"\ndownloading:\ntype URL\\/\n";
+                    infotext.setString("URL=");
                     mode=urltyping;
                     crypting=en;
                     system("title urltyping");
                 }else
+                if(event.text.unicode==107){
+                    cout<<"console`s header shows current mode.\nh = http request (unfortunately doesn`t support https)\nd = decrypt from disc\ne = encrypt from disc and overwrite\nm = turns mask on/off\nc = clear screen\nr = reset position and scale of image \nesc = back to display mode and clear all buffers\n\nencryption and decryption are the same operations because of algoritm used here.\n";
+                }else
+                if(event.text.unicode==109){
+                    mask=!mask;
+                }else
                 if(event.text.unicode==99){
                     system("cls");
+                    cout<<header;
                 }else
                 if((event.text.unicode==114)||(event.text.unicode==82)){
                     spriteScale=1;
-                    sprite.setPosition(0,0);
+                    sprite.setPosition(0,40);
                     sprite.setScale(1,1);
                 }
             }
@@ -395,6 +443,36 @@ int main()
             }
             if(event.type==sf::Event::MouseButtonReleased){
                 mouseButton=0;
+                if((event.mouseButton.x<downloadSprite.getPosition().x+downloadTexture.getSize().x)&&(event.mouseButton.y<downloadSprite.getPosition().y+downloadTexture.getSize().y)&&(event.mouseButton.x>=downloadSprite.getPosition().x)&&(event.mouseButton.y>=downloadSprite.getPosition().y)){
+                    cout<<"\ndownloading:\ntype URL\\/\n";
+                    infotext.setString("URL=");
+                    mode=urltyping;
+                    crypting=en;
+                    system("title urltyping");
+                }else
+                if((event.mouseButton.x<deleteSprite.getPosition().x+deleteTexture.getSize().x)&&(event.mouseButton.y<deleteSprite.getPosition().y+deleteTexture.getSize().y)&&(event.mouseButton.x>=deleteSprite.getPosition().x)&&(event.mouseButton.y>=deleteSprite.getPosition().y)){
+                    texture.create(1,1);
+                    sprite.setTexture(texture);
+                    cout<<"\nimage cleared\n";
+                }else
+                if((event.mouseButton.x<decryptSprite.getPosition().x+decryptTexture.getSize().x)&&(event.mouseButton.y<decryptSprite.getPosition().y+decryptTexture.getSize().y)&&(event.mouseButton.x>=decryptSprite.getPosition().x)&&(event.mouseButton.y>=decryptSprite.getPosition().y)){
+                    mode=passwording;
+                    crypting=de;
+                    cout<<"\ndecrypting:\ntype name\\/\n";
+                    infotext.setString("name=");
+                    system("title passwording");
+                }else
+                if((event.mouseButton.x<resetSprite.getPosition().x+resetTexture.getSize().x)&&(event.mouseButton.y<resetSprite.getPosition().y+resetTexture.getSize().y)&&(event.mouseButton.x>=resetSprite.getPosition().x)&&(event.mouseButton.y>=resetSprite.getPosition().y)){
+                    sprite.setPosition(0,40);
+                    sprite.setScale(1,1);
+                }else
+                if((event.mouseButton.x<encryptSprite.getPosition().x+encryptTexture.getSize().x)&&(event.mouseButton.y<encryptSprite.getPosition().y+encryptTexture.getSize().y)&&(event.mouseButton.x>=encryptSprite.getPosition().x)&&(event.mouseButton.y>=encryptSprite.getPosition().y)){
+                    mode=passwording;
+                    crypting=en_fromfile;
+                    cout<<"\nencrypting from file:\ntype name\\/\n";
+                    infotext.setString("name=");
+                    system("title passwording");
+                }
             }
             if(event.type==sf::Event::MouseMoved){
                 if(mouseButton) sprite.setPosition(sprite.getPosition()-lastpos+sf::Vector2f(event.mouseMove.x, event.mouseMove.y));
@@ -411,6 +489,23 @@ int main()
         }
     window.clear(sf::Color(50, 50, 50));
     window.draw(sprite);
+    if(mask)
+        for(int i=0; i<40/* 1200/30 */; i++){
+            for(int j=0; j<36/* 720/20 */; j++){
+                maskSprite.setPosition(i*30, j*20);
+                window.draw(maskSprite);
+            }
+        }
+    window.draw(downloadSprite);
+    window.draw(encryptSprite);
+    window.draw(decryptSprite);
+    if(mode!=displaying)
+        if(crypting==en)              window.draw(downloadingSprite);
+        else if(crypting==en_fromfile)window.draw(encryptingSprite);
+        else if(crypting==de)         window.draw(decryptingSprite);
+    window.draw(deleteSprite);
+    window.draw(resetSprite);
+    window.draw(infotext);
     window.display();
     }
     return 0;
