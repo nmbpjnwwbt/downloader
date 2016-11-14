@@ -672,6 +672,12 @@ int main()
                         timer=0;
                         centerText();
                     }
+                    if(event.key.code==sf::Keyboard::Delete){
+                        if(cursorpos<filebody.length()){
+                            filebody.erase(cursorpos, 1);
+                            unknowntext.setString(filebody);
+                        }
+                    }
                 }
             }else
             if(event.type==sf::Event::MouseButtonPressed){
