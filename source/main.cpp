@@ -503,7 +503,7 @@ int main()
                                 if(plik.good()){
                                     buffer="";
                                     char ch;
-                                    plik.seekg(0,plik.end);
+                                    plik.seekg(0, plik.end);
                                     if(buffer.max_size()<plik.tellg()+102400){
                                         cout<<"Sorry, file is too big to be read. Try to encrypt it using 'e'.\nMax file length is for now "<<buffer.max_size()-102400<<" bytes.\n";
                                         plik.close();
@@ -516,6 +516,7 @@ int main()
                                         cursorpos=0;
                                         break;
                                     }
+                                    plik.seekg(0, plik.beg);
                                     while(plik>>noskipws>>ch){
                                         buffer+=ch;
                                     }
@@ -561,7 +562,7 @@ int main()
                                     }
                                     cursorpos=0;
                                 }else{
-                                    cout<<"\nfile loading error";
+                                    cout<<"\nfile loading error\n";
                                     resetbuffers();
                                 }
                                 plik.close();
@@ -706,7 +707,7 @@ int main()
                         }else{
                             filename=key;
                             key="";
-                            cout<<"\ntype password \\/\n";
+                            if(filename.length()) cout<<"\ntype password \\/\n";
                             infotext.setString("password=");
                         }
                     }else
