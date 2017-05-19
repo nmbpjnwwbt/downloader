@@ -6,6 +6,7 @@
 #include <fstream>
 #include <curl/curl.h>
 #include <vector>
+#include <list>
 
 
 //I know, that`s spaghetti
@@ -147,6 +148,9 @@ bool copyToClipboard(string &input){
     CloseClipboard();
     return 1;
 }
+bool copyToClipboard(string input, bool dkjvblhdsbcjlh){
+    return copyToClipboard(input);
+}
 
 sf::RenderWindow window(sf::VideoMode(1200, 720), "downloader");
 sf::Event event;
@@ -157,7 +161,7 @@ modes mode=displaying;
 crypt crypting;
 answers answer=wait;
 string url, uri, key, filename, filebody, buffer, header;
-bool mouseButton, mask, TnI=0/*0=text, 1=image*/;
+bool mouseButton, mask, TnI=0, selecting=0/*0=text, 1=image*/;
 float spriteScale=1;
 sf::Vector2f lastpos, utextdelta(0,40);
 sf::Texture texture, maskTexture, downloadingTexture, downloadTexture, deleteTexture, decryptTexture, decryptingTexture, encryptTexture, encryptingTexture, resetTexture, saveTexture, savingTexture, textpointerTexture;
@@ -167,7 +171,10 @@ sf::Ftp::Response ftpresponse;
 sf::Font mainfont, full_ascii;
 sf::Text infotext, unknowntext;
 sf::RectangleShape greybar(sf::Vector2f(1200, 40));
+sf::Color bgcolor(50,50,50);
+vector<sf::RectangleShape> selectfield;
 int charsize=14, cursorpos=0, timer=0;
+unsigned int selectchar[2];
 
 void resetbuffers(){
     mode=displaying;
@@ -197,6 +204,90 @@ void centerText(){
         unknowntext.setPosition(utextdelta);
         textpointerSprite.setPosition(textpointerSprite.getPosition().x, 705);
     }
+    if(selecting){
+        selectchar[1]=cursorpos;
+
+        if(selectchar[0]==selectchar[1]){
+            selectfield.clear();
+        }else{
+            sf::Vector2f selcharpos[2];
+            selcharpos[0]=unknowntext.findCharacterPos(selectchar[0]);
+            selcharpos[1]=unknowntext.findCharacterPos(selectchar[1]);
+            bool biggercharpos=(selectchar[0]<selectchar[1]);
+            if(selcharpos[0].y==selcharpos[1].y){
+                if(selectfield.size()!=1){
+                    selectfield.clear();
+                    selectfield.push_back(sf::RectangleShape());
+                }
+                selectfield[0].setPosition(selcharpos[!biggercharpos]);
+                selectfield[0].setSize(sf::Vector2f(selcharpos[biggercharpos].x-selcharpos[!biggercharpos].x,charsize*4/3));
+                selectfield[0].setFillColor(sf::Color(120,120,120));
+            }else
+            if(biggercharpos){
+                int i1=selectchar[0], i2=filebody.find("\n", selectchar[0]), icount=1;
+                if(!selectfield.size()){
+                    selectfield.push_back(sf::RectangleShape());
+                    selectfield[0].setFillColor(sf::Color(120,120,120));
+                }
+                if(selectfield[0].getGlobalBounds().left+selectfield[0].getGlobalBounds().width!=unknowntext.findCharacterPos(i2).x){
+                    selectfield[0].setPosition(unknowntext.findCharacterPos(i1));
+                    selectfield[0].setSize(sf::Vector2f(unknowntext.findCharacterPos(i2).x-unknowntext.findCharacterPos(i1).x,charsize*4/3));
+                }
+                while(1){
+                    i1=(++i2);
+                    i2=filebody.find("\n", i1);
+                    if(selectfield.size()<=icount){
+                        selectfield.push_back(sf::RectangleShape());
+                        selectfield[icount].setFillColor(sf::Color(120,120,120));
+                    }
+                    if(i2>=selectchar[1]){
+                        while(selectfield.size()>icount+1){
+                            selectfield.pop_back();
+                        }
+                        selectfield[icount].setPosition(unknowntext.findCharacterPos(i1));
+                        selectfield[icount].setSize(sf::Vector2f(unknowntext.findCharacterPos(cursorpos).x-unknowntext.findCharacterPos(i1).x,charsize*4/3));
+                        break;
+                    }
+                    selectfield[icount].setPosition(unknowntext.findCharacterPos(i1));
+                    selectfield[icount].setSize(sf::Vector2f(unknowntext.findCharacterPos(i2).x-unknowntext.findCharacterPos(i1).x,charsize*4/3));
+                    icount++;
+                }
+            }
+            else{
+                int i1=selectchar[0], i2=filebody.rfind("\n", selectchar[0]-1), icount=1;
+                if(!selectfield.size()){
+                    selectfield.push_back(sf::RectangleShape());
+                    selectfield[0].setFillColor(sf::Color(120,120,120));
+                }
+                selectfield[0].setPosition(unknowntext.findCharacterPos(i2+1));
+                selectfield[0].setSize(sf::Vector2f(unknowntext.findCharacterPos(i1).x,charsize*4/3));
+                while(1){
+                    i1=i2;
+                    i2=filebody.rfind("\n", i1-1);
+                    if(selectfield.size()<=icount){
+                        selectfield.push_back(sf::RectangleShape());
+                        selectfield[icount].setFillColor(sf::Color(120,120,120));
+                    }
+                    if((i2<selectchar[1])||(i2==string::npos)){
+                        while(selectfield.size()>icount+1){
+                            selectfield.pop_back();
+                        }
+                        selectfield[icount].setPosition(unknowntext.findCharacterPos(i1));
+                        selectfield[icount].setSize(sf::Vector2f(unknowntext.findCharacterPos(cursorpos).x-unknowntext.findCharacterPos(i1).x,charsize*4/3));
+                        break;
+                    }
+                    selectfield[icount].setPosition(unknowntext.findCharacterPos(i2+1));
+                    selectfield[icount].setSize(sf::Vector2f(unknowntext.findCharacterPos(i1).x,charsize*4/3));
+                    icount++;
+                }
+            }
+        }
+    }else
+    if(selectfield.size()){
+        selectchar[0]=selectchar[1];
+        selectfield.clear();
+    }
+
 }
 
 int main()
@@ -240,8 +331,9 @@ int main()
         textpointerTexture.loadFromFile("img/pointer.bmp");
         textpointerSprite.setTexture(textpointerTexture);
         textpointerSprite.setPosition(utextdelta);
+        textpointerSprite.setScale(charsize/12, (charsize*4)/3);
         greybar.setPosition(0,0);
-        greybar.setFillColor(sf::Color(50,50,50));
+        greybar.setFillColor(bgcolor);
         mainfont.loadFromFile("font.ttf");
         full_ascii.loadFromFile("SourceCodePro-Regular.ttf");
         infotext.setFont(mainfont);
@@ -252,8 +344,10 @@ int main()
         unknowntext.setColor(sf::Color(0,255,0));
         unknowntext.setCharacterSize(14);
         unknowntext.setPosition(utextdelta);
-        header="downloader v1.2 by Aleksander Czajka\npress k for key biddings\n\n";
+        header="downloader v1.3 by Aleksander Czajka\npress k for key biddings\n\n";
         infotext.setString(header);
+
+
     }
     cout<<header;
     while(window.isOpen()){
@@ -409,6 +503,19 @@ int main()
                                 if(plik.good()){
                                     buffer="";
                                     char ch;
+                                    plik.seekg(0,plik.end);
+                                    if(buffer.max_size()<plik.tellg()+102400){
+                                        cout<<"Sorry, file is too big to be read. Try to encrypt it using 'e'.\nMax file length is for now "<<buffer.max_size()-102400<<" bytes.\n";
+                                        plik.close();
+                                        unknowntext.setString(buffer);
+                                        filebody="";
+                                        TnI=1;
+                                        system("title writting");
+                                        mode=writting;
+                                        crypting=text;
+                                        cursorpos=0;
+                                        break;
+                                    }
                                     while(plik>>noskipws>>ch){
                                         buffer+=ch;
                                     }
@@ -674,18 +781,32 @@ int main()
                     }else
                     if((event.text.unicode==22)&&((sf::Keyboard::isKeyPressed(sf::Keyboard::LControl))||(sf::Keyboard::isKeyPressed(sf::Keyboard::RControl)))){
                         if(OpenClipboard(0)){
+                            if(selectchar[0]!=selectchar[1]){
+                                if(selectchar[0]<selectchar[1]){
+                                    unknowntext.setString(filebody.replace(selectchar[0], selectchar[1]-selectchar[0], (char*)(GetClipboardData(CF_TEXT))));
+                                    cursorpos=1+(selectchar[1]=selectchar[0]);
+                                }else{
+                                    unknowntext.setString(filebody.replace(selectchar[1], selectchar[0]-selectchar[1], (char*)(GetClipboardData(CF_TEXT))));
+                                    cursorpos=1+(selectchar[0]=selectchar[1]);
+                                }
+                            }else{
                             int i=filebody.length();
-                            filebody.insert(cursorpos, (char*)(GetClipboardData(CF_TEXT)));
-                            unknowntext.setString(filebody);
-                            i=filebody.length()-i;
-                            cursorpos+=i;
+                                unknowntext.setString(filebody.insert(cursorpos, (char*)(GetClipboardData(CF_TEXT))));
+                                i=filebody.length()-i;
+                                cursorpos+=i;
+                            }
                             textpointerSprite.setPosition(unknowntext.findCharacterPos(cursorpos));
                             centerText();
                             CloseClipboard();
                         }
                     }else
                     if((event.text.unicode==3)&&((sf::Keyboard::isKeyPressed(sf::Keyboard::LControl))||(sf::Keyboard::isKeyPressed(sf::Keyboard::RControl)))){
-                        copyToClipboard(filebody);
+                        if(selectchar[0]==selectchar[1])
+                            copyToClipboard(filebody);
+                        else{
+                            bool biggercharpos=(selectchar[0]<selectchar[1]);
+                            copyToClipboard(filebody.substr(selectchar[!biggercharpos], selectchar[biggercharpos]-selectchar[!biggercharpos]), 1);
+                        }
                     }else
                     if((event.text.unicode==1)&&((sf::Keyboard::isKeyPressed(sf::Keyboard::LControl))||(sf::Keyboard::isKeyPressed(sf::Keyboard::RControl)))){
                         mode=passwording;
@@ -714,10 +835,23 @@ int main()
                     else{
                         unsigned char etu=event.text.unicode;
                         if(etu==13)etu=10;
-                        unknowntext.setString(filebody.insert(cursorpos, 1, etu));
-                        cursorpos++;
+                        if(selectchar[0]!=selectchar[1]){
+                            if(selectchar[0]<selectchar[1]){
+                                unknowntext.setString(filebody.replace(selectchar[0], selectchar[1]-selectchar[0], 1, etu));
+                                cursorpos=1+(selectchar[1]=selectchar[0]);
+                            }else{
+                                unknowntext.setString(filebody.replace(selectchar[1], selectchar[0]-selectchar[1], 1, etu));
+                                cursorpos=1+(selectchar[0]=selectchar[1]);
+                            }
+                        }else{
+                            unknowntext.setString(filebody.insert(cursorpos, 1, etu));
+                            cursorpos++;
+                        }
+
                         textpointerSprite.setPosition(unknowntext.findCharacterPos(cursorpos));
                     }
+                    selecting=0;
+                    centerText();
                 }else
                 if(mode==answering){
                     if(answer!=wait){
@@ -780,13 +914,19 @@ int main()
             if(event.type==sf::Event::KeyPressed){
                 if(mode==writting){
                     if((event.key.code==sf::Keyboard::Left)&&(cursorpos>0)){
-                        cursorpos--;
+                        if((selectchar[0]!=selectchar[1])&&(!sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)))
+                            cursorpos=selectchar[(selectchar[0]>selectchar[1])];
+                        else
+                            cursorpos--;
                         textpointerSprite.setPosition(unknowntext.findCharacterPos(cursorpos));
                         centerText();
                         timer=0;
                     }else
                     if((event.key.code==sf::Keyboard::Right)&&(cursorpos<filebody.length())){
-                        cursorpos++;
+                        if((selectchar[0]!=selectchar[1])&&(!sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)))
+                            cursorpos=selectchar[(selectchar[0]<selectchar[1])];
+                        else
+                            cursorpos++;
                         textpointerSprite.setPosition(unknowntext.findCharacterPos(cursorpos));
                         centerText();
                         timer=0;
@@ -822,24 +962,74 @@ int main()
                             findings[0]=cursorpos-findings[1]-1;
                             cursorpos=findings[1];
                             findings[1]=filebody.rfind('\n', cursorpos-1);
-                            if(findings[1]==string::npos)
                             if(findings[1]+1+findings[0]<cursorpos) cursorpos=findings[1]+1+findings[0];
-                            else cursorpos--;
                         }
                         textpointerSprite.setPosition(unknowntext.findCharacterPos(cursorpos));
                         timer=0;
                         centerText();
+
                     }
                     if(event.key.code==sf::Keyboard::Delete){
                         if(cursorpos<filebody.length()){
                             filebody.erase(cursorpos, 1);
                             unknowntext.setString(filebody);
                         }
+                    }else
+                    if((event.key.code==sf::Keyboard::LShift)&&(!selecting)){
+                        selectchar[0]=selectchar[1]=cursorpos;
+                        selecting=1;
+                    }else
+                    if(event.key.code==sf::Keyboard::Home){
+                        cursorpos=0;
+                        textpointerSprite.setPosition(unknowntext.findCharacterPos(cursorpos));
+                        centerText();
+                        timer=0;
+                    }else
+                    if(event.key.code==sf::Keyboard::End){
+                        cursorpos=filebody.length();
+                        textpointerSprite.setPosition(unknowntext.findCharacterPos(cursorpos));
+                        centerText();
+                        timer=0;
                     }
+                }
+            }else
+            if(event.type==sf::Event::KeyReleased){
+                if(event.key.code==sf::Keyboard::LShift){
+                    selecting=0;
+                    if(selectchar[0]>selectchar[1]){
+                        unsigned int asdvfajhc=selectchar[0];
+                        selectchar[0]=selectchar[1];
+                        selectchar[1]=asdvfajhc;
+                    }else
+                    if(selectchar[0]==selectchar[1])
+                        selectchar[0]=selectchar[1]=0;
                 }
             }else
             if(event.type==sf::Event::MouseButtonPressed){
                 mouseButton=1;
+                if(mode==writting){
+                    if(event.mouseButton.y<unknowntext.findCharacterPos(0).y){
+                        cursorpos=0;
+                    }else
+                    if(event.mouseButton.y>unknowntext.findCharacterPos(filebody.length()-1).y+charsize*4/3){
+                        cursorpos=filebody.length();
+                    }else{
+                        cursorpos=0;
+                        while(event.mouseButton.y>unknowntext.findCharacterPos(cursorpos+1).y){
+                            cursorpos=filebody.find('\n', cursorpos+1);
+                            if(cursorpos==string::npos){
+                                cursorpos=filebody.length();
+                                break;
+                            }
+                        }
+                        while(event.mouseButton.x<unknowntext.findCharacterPos(cursorpos).x){
+                            cursorpos--;
+                        }
+                    }
+                    textpointerSprite.setPosition(unknowntext.findCharacterPos(cursorpos));
+                    centerText();
+                    timer=0;
+                }
             }else
             if(event.type==sf::Event::MouseButtonReleased){
                 mouseButton=0;
@@ -900,6 +1090,9 @@ int main()
                 }
                 else{
                     utextdelta.y+=event.mouseWheel.delta*20;
+                    for(int i=0; i<selectfield.size(); i++){
+                         selectfield[i].move(0,event.mouseWheel.delta*20);
+                    }
                     textpointerSprite.move(0,event.mouseWheel.delta*20);
                     unknowntext.setPosition(utextdelta);
                     timer=0;
@@ -911,10 +1104,13 @@ int main()
         timer++;
         if(timer>29)timer=0;
 
-        window.clear(sf::Color(50, 50, 50));
+        window.clear(bgcolor);
         if(TnI){
+            if(selectchar[0]!=selectchar[1])
+                for(int i=0; i<selectfield.size(); ++i)
+                    window.draw(selectfield[i]);
             window.draw(unknowntext);
-            if(timer<15)window.draw(textpointerSprite);
+            if(timer<15) window.draw(textpointerSprite);
         }
         else window.draw(sprite);
         if(mask)
