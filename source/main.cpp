@@ -179,6 +179,7 @@ unsigned int selectchar[2];
 void resetbuffers(){
     mode=displaying;
     system("title displaying");
+    window.setTitle("downloader   mode(displaying)");
     url=uri=key=filename=buffer="";
     infotext.setString(header);
 }
@@ -294,6 +295,7 @@ int main()
 {
     {   system("color 0a");
         system("title displaying");
+        window.setTitle("downloader   mode(displaying)");
         window.setFramerateLimit(30);
         sprite.setPosition(0,40);
         maskTexture.loadFromFile("img/mask.png");
@@ -371,6 +373,7 @@ int main()
                         if(!url.find("ftpconnect")){
                             mode=ftpconnect;
                             system("title ftp");
+                            window.setTitle("downloader   mode(ftp)");
                             ftpresponse=ftp.connect(url);
                             if(ftpresponse.isOk()){
                                 cout<<"\nconnected";
@@ -400,11 +403,13 @@ int main()
                                     infotext.setString("name=");
                                     mode=passwording;
                                     system("title passwording");
+                                    window.setTitle("downloader   mode(passwording)");
                                     break;
                                 }else{
                                     TnI=1;
                                     mode=writting;
                                     system("title writting");
+                                    window.setTitle("downloader   mode(writting)");
                                     infotext.setString("Unknown format.");
                                 }
                                 unknowntext.setString(filebody);
@@ -414,6 +419,7 @@ int main()
                                 cout<<response.getBody();
                                 mode=displaying;
                                 system("title displaying");
+                                window.setTitle("downloader   mode(displaying)");
                                 resetbuffers();
                                 infotext.setString(header);
                             }
@@ -511,6 +517,7 @@ int main()
                                         filebody="";
                                         TnI=1;
                                         system("title writting");
+                                        window.setTitle("downloader   mode(writting)");
                                         mode=writting;
                                         crypting=text;
                                         cursorpos=0;
@@ -551,12 +558,14 @@ int main()
                                         resetbuffers();
                                         TnI=0;
                                         system("title displaying");
+                                        window.setTitle("downloader   mode(displaying)");
                                         mode=displaying;
                                     }else{
                                         unknowntext.setString(buffer);
                                         filebody=buffer;
                                         TnI=1;
                                         system("title writting");
+                                        window.setTitle("downloader   mode(writting)");
                                         mode=writting;
                                         crypting=text;
                                     }
@@ -638,12 +647,14 @@ int main()
                                     resetbuffers();
                                     TnI=0;
                                     system("title displaying");
+                                    window.setTitle("downloader   mode(displaying)");
                                     mode=displaying;
                                 }else{
                                     unknowntext.setString(filename);
                                     filebody=filename;
                                     TnI=1;
                                     system("title writting");
+                                    window.setTitle("downloader   mode(writting)");
                                     mode=writting;
                                 }
                             }else
@@ -660,11 +671,13 @@ int main()
                                     resetbuffers();
                                     TnI=0;
                                     system("title displaying");
+                                    window.setTitle("downloader   mode(displaying)");
                                     mode=displaying;
                                 }else{
                                     unknowntext.setString(filebody);
                                     TnI=1;
                                     system("title writting");
+                                    window.setTitle("downloader   mode(writting)");
                                     mode=writting;
                                     crypting=text;
                                 }
@@ -682,11 +695,13 @@ int main()
                                     resetbuffers();
                                     TnI=0;
                                     system("title displaying");
+                                    window.setTitle("downloader   mode(displaying)");
                                     mode=displaying;
                                 }else{
                                     unknowntext.setString(filebody);
                                     TnI=1;
                                     system("title writting");
+                                    window.setTitle("downloader   mode(writting)");
                                     mode=writting;
                                     crypting=text;
                                 }
@@ -700,6 +715,7 @@ int main()
                                     cout<<"track is empty\n";
                                 TnI=1;
                                 system("title writting");
+                                window.setTitle("downloader   mode(writting)");
                                 mode=writting;
                                 crypting=text;
                             }
@@ -864,6 +880,7 @@ int main()
                         filename=key=buffer="";
                         mode=displaying;
                         system("title displaying");
+                        window.setTitle("downloader   mode(displaying)");
                     }
                 }else
                 if(mode==ftpconnect){
@@ -879,6 +896,7 @@ int main()
                     cout<<"\ndecrypting:\ntype name\\/\n";
                     infotext.setString("name=");
                     system("title passwording");
+                    window.setTitle("downloader   mode(passwording)");
                 }else
                 if(event.text.unicode==101){
                     mode=passwording;
@@ -886,6 +904,7 @@ int main()
                     cout<<"\nencrypting from file:\ntype name\\/\n";
                     infotext.setString("name=");
                     system("title passwording");
+                    window.setTitle("downloader   mode(passwording)");
                 }else
                 if(event.text.unicode==104){
                     cout<<"\ndownloading:\ntype URL\\/\n";
@@ -893,6 +912,7 @@ int main()
                     mode=urltyping;
                     crypting=en;
                     system("title urltyping");
+                    window.setTitle("downloader   mode(urltyping)");
                 }else
                 if(event.text.unicode==107){
                     cout<<"console`s header shows current mode.\nh = http request (unfortunately doesn`t support https)\nd = decrypt from disc\ne = encrypt from disc and overwrite\nm = turns mask on/off\nc = clear screen\nr = reset position and scale of image\nw = writting mode\n   ctrl+q = en/de crypt text\n   ctrl+backspace = delete all text\n   ctrl+c = copy all text\n   ctrl+v = paste\n   ctrl+s = save as...\n   ctrl+a = add salt\n   ctrl+r = remove salt\nesc = back to display mode and clear all buffers\n\nencryption and decryption are the same operations because of algoritm used here.\n";
@@ -1041,6 +1061,7 @@ int main()
                     mode=urltyping;
                     crypting=en;
                     system("title urltyping");
+                    window.setTitle("downloader   mode(urltyping)");
                 }else
                 if((event.mouseButton.x<deleteSprite.getPosition().x+deleteTexture.getSize().x)    &&(event.mouseButton.y<deleteSprite.getPosition().y+deleteTexture.getSize().y)    &&(event.mouseButton.x>=deleteSprite.getPosition().x)  &&(event.mouseButton.y>=deleteSprite.getPosition().y)){
                     texture.create(1,1);
@@ -1054,11 +1075,13 @@ int main()
                     cout<<"\ndecrypting:\ntype name\\/\n";
                     infotext.setString("name=");
                     system("title passwording");
+                    window.setTitle("downloader   mode(passwording)");
                 }else
                 if((event.mouseButton.x<resetSprite.getPosition().x+resetTexture.getSize().x)      &&(event.mouseButton.y<resetSprite.getPosition().y+resetTexture.getSize().y)      &&(event.mouseButton.x>=resetSprite.getPosition().x)   &&(event.mouseButton.y>=resetSprite.getPosition().y)){
                     spriteScale=1;
                     sprite.setPosition(0,40);
                     sprite.setScale(1,1);
+                    texture.loadFromMemory(&filebody[0], filebody.length());
                 }else
                 if((event.mouseButton.x<encryptSprite.getPosition().x+encryptTexture.getSize().x)  &&(event.mouseButton.y<encryptSprite.getPosition().y+encryptTexture.getSize().y)  &&(event.mouseButton.x>=encryptSprite.getPosition().x) &&(event.mouseButton.y>=encryptSprite.getPosition().y)){
                     resetbuffers();
@@ -1067,6 +1090,7 @@ int main()
                     cout<<"\nencrypting from file:\ntype name\\/\n";
                     infotext.setString("name=");
                     system("title passwording");
+                    window.setTitle("downloader   mode(passwording)");
                 }else
                 if((event.mouseButton.x<saveSprite.getPosition().x+saveTexture.getSize().x)        &&(event.mouseButton.y<saveSprite.getPosition().y+saveTexture.getSize().y)        &&(event.mouseButton.x>=saveSprite.getPosition().x)    &&(event.mouseButton.y>=saveSprite.getPosition().y)){
                     mode=passwording;
