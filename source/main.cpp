@@ -1047,6 +1047,8 @@ int main()
                             cursorpos--;
                         }
                     }
+                    selecting=1;
+                    selectchar[1]=selectchar[0]=cursorpos;
                     textpointerSprite.setPosition(unknowntext.findCharacterPos(cursorpos));
                     centerText();
                     timer=0;
@@ -1100,9 +1102,39 @@ int main()
                     infotext.setString("track=");
                     crypting=saving;
                 }
+                if(selecting&&(!sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))){
+                    selecting=0;
+                }
             }else
             if(event.type==sf::Event::MouseMoved){
-                if(mouseButton) sprite.setPosition(sprite.getPosition()-lastpos+sf::Vector2f(event.mouseMove.x, event.mouseMove.y));
+                if(mouseButton){
+                    if(mode==writting){
+                        if(event.mouseMove.y<unknowntext.findCharacterPos(0).y){
+                            cursorpos=0;
+                        }else
+                        if(event.mouseMove.y>unknowntext.findCharacterPos(filebody.length()-1).y+charsize*4/3){
+                            cursorpos=filebody.length();
+                        }else{
+                            cursorpos=0;
+                            while(event.mouseMove.y>unknowntext.findCharacterPos(cursorpos+1).y){
+                                cursorpos=filebody.find('\n', cursorpos+1);
+                                if(cursorpos==string::npos){
+                                    cursorpos=filebody.length();
+                                    break;
+                                }
+                            }
+                            while(event.mouseMove.x<unknowntext.findCharacterPos(cursorpos).x){
+                                cursorpos--;
+                            }
+                        }
+                        selectchar[1]=cursorpos;
+                        textpointerSprite.setPosition(unknowntext.findCharacterPos(cursorpos));
+                        centerText();
+                        timer=0;
+                    }else
+                    if(mode==displaying)
+                        sprite.setPosition(sprite.getPosition()-lastpos+sf::Vector2f(event.mouseMove.x, event.mouseMove.y));
+                }
                 lastpos.x=event.mouseMove.x;
                 lastpos.y=event.mouseMove.y;
             }else
