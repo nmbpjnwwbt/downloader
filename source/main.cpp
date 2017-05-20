@@ -749,7 +749,7 @@ int main()
                             buffer+=(char*)(GetClipboardData(CF_TEXT));
                             infotext.setString(buffer);
                             key+=(char*)(GetClipboardData(CF_TEXT));
-                            cout<<(char*)(GetClipboardData(CF_TEXT));
+                            if(!filename.length()) cout<<(char*)(GetClipboardData(CF_TEXT));
                             CloseClipboard();
                         }
                     }else
@@ -771,7 +771,10 @@ int main()
                     }else{
                         infotext.setString(infotext.getString()+char(event.text.unicode));
                         key+=char(event.text.unicode);
-                        cout<<char(event.text.unicode);
+                        if(!filename.length())
+                            cout<<char(event.text.unicode);
+                        else
+                            cout<<'*';
                     }
                 }else
                 if(mode==writting){
