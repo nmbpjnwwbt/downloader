@@ -4,7 +4,6 @@
 #include <cstdlib>
 #include <windows.h>
 #include <fstream>
-#include <curl/curl.h>
 #include <vector>
 #include <list>
 
@@ -291,8 +290,61 @@ void centerText(){
 
 }
 
+
+class ito{public:
+    bool removing, pasted=0, undoned=0;
+    unsigned int oprange;
+    string opdata;
+
+
+    ito(unsigned int rangein, char datain, bool removingin, bool pastedin=0){
+        opdata+=datain;
+        oprange=rangein;
+        removing=removingin;
+        pasted=pastedin;
+    }
+    ito(unsigned int rangein, string datain, bool removingin, bool pastedin=0){
+        opdata=datain;
+        oprange=rangein;
+        removing=removingin;
+        pasted=pastedin;
+    }
+
+    bool ctrlz(bool undo=0){
+        if(undoned^undo) return 0;
+        if((removing%2)^(undo%2)){
+
+            if(oprange<=filebody.length()){
+                filebody.insert(oprange, opdata);
+                cursorpos=oprange+opdata.length();
+            }
+        }
+        else{
+            if(oprange<=filebody.length()){
+                filebody.erase(oprange, opdata.length());
+                cursorpos=oprange;
+            }else return 0;
+        }
+        unknowntext.setString(filebody);
+        textpointerSprite.setPosition(unknowntext.findCharacterPos(cursorpos));
+        undoned=!undoned;
+        return 1;
+    }
+
+};
+list<ito> TOPBuffer;
+list<ito>::iterator TOPBufferit=TOPBuffer.begin();
+void removeRemoved(){
+    if((TOPBufferit==TOPBuffer.begin())&&((*TOPBufferit).undoned)){
+        TOPBuffer.clear();
+    }else
+        while(&(*TOPBufferit)!=&TOPBuffer.back()){
+            TOPBuffer.pop_back();
+        }
+}
+
 int main()
-{
+{//83
     {   system("color 0a");
         system("title displaying");
         window.setTitle("downloader   mode(displaying)");
@@ -561,6 +613,12 @@ int main()
                                         window.setTitle("downloader   mode(displaying)");
                                         mode=displaying;
                                     }else{
+                                        int x, y;
+                                        getCursor(x, y);
+                                        COORD coord={0, y-2};
+                                        SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord );
+                                        cout<<"                                                                                                   ";
+                                        SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord );
                                         unknowntext.setString(buffer);
                                         filebody=buffer;
                                         TnI=1;
@@ -650,6 +708,12 @@ int main()
                                     window.setTitle("downloader   mode(displaying)");
                                     mode=displaying;
                                 }else{
+                                    int x, y;
+                                    getCursor(x, y);
+                                    COORD coord={0, y-2};
+                                    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord );
+                                    cout<<"                                                                                                   ";
+                                    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord );
                                     unknowntext.setString(filename);
                                     filebody=filename;
                                     TnI=1;
@@ -663,6 +727,7 @@ int main()
                                 if((seci<=filebody.length())&&(key.size())){
                                     srand(time(0));
                                     filebody.insert(seci,1,char(rand()%256));
+
                                 }else
                                     cout<<"file or key is too short\n";
                                 if(texture.loadFromMemory(&filebody[0], filebody.length())){
@@ -779,11 +844,33 @@ int main()
                 }else
                 if(mode==writting){
                     if(event.text.unicode==8){
+                        bool biggerselch=(selectchar[0]<selectchar[1]);            //021-J
+
+                        removeRemoved();
+                        if(selectchar[0]!=selectchar[1]){
+                            if(TOPBuffer.empty()){
+                                TOPBuffer.push_back(ito(selectchar[!biggerselch], filebody.substr(selectchar[!biggerselch], selectchar[biggerselch]-selectchar[!biggerselch]+1), 1));
+                                TOPBufferit=TOPBuffer.begin();
+                            }else{
+                                TOPBuffer.push_back(ito(selectchar[!biggerselch], filebody.substr(selectchar[!biggerselch], selectchar[biggerselch]-selectchar[!biggerselch]+1), 1));
+                                TOPBufferit++;
+                            }
+                            unknowntext.setString(filebody.erase(selectchar[!biggerselch], selectchar[biggerselch]-selectchar[!biggerselch]+1));
+                            cursorpos=selectchar[!biggerselch];
+                        }else
                         if((cursorpos)&&(filebody.length())){
+
+                            if((!TOPBuffer.empty())&&((*TOPBufferit).removing)&&(!(*TOPBufferit).pasted)&&((*TOPBufferit).oprange==cursorpos)){
+                                (*TOPBufferit).opdata=filebody[cursorpos-1]+(*TOPBufferit).opdata;
+                                (*TOPBufferit).oprange--;
+                            }else{
+                                TOPBuffer.push_back(ito(cursorpos-1, filebody[cursorpos-1], 1));
+                                TOPBufferit++;
+                            }
                             unknowntext.setString(filebody.erase(cursorpos-1, 1));
                             cursorpos--;
-                            textpointerSprite.setPosition(unknowntext.findCharacterPos(cursorpos));
                         }
+                        textpointerSprite.setPosition(unknowntext.findCharacterPos(cursorpos));
                     }else
                     if(event.text.unicode==127){
                         filebody="";
@@ -801,22 +888,39 @@ int main()
                     }else
                     if((event.text.unicode==22)&&((sf::Keyboard::isKeyPressed(sf::Keyboard::LControl))||(sf::Keyboard::isKeyPressed(sf::Keyboard::RControl)))){
                         if(OpenClipboard(0)){
-                            if(selectchar[0]!=selectchar[1]){
-                                if(selectchar[0]<selectchar[1]){
-                                    unknowntext.setString(filebody.replace(selectchar[0], selectchar[1]-selectchar[0], (char*)(GetClipboardData(CF_TEXT))));
-                                    cursorpos=1+(selectchar[1]=selectchar[0]);
+                            char *clipHWND=(char*)(GetClipboardData(CF_TEXT));
+                            if(clipHWND){
+                                if(selectchar[0]!=selectchar[1]){
+                                    if(selectchar[0]<selectchar[1]){
+                                        unknowntext.setString(filebody.replace(selectchar[0], selectchar[1]-selectchar[0], clipHWND));
+                                        cursorpos=1+(selectchar[1]=selectchar[0]);
+                                    }else{
+                                        unknowntext.setString(filebody.replace(selectchar[1], selectchar[0]-selectchar[1], clipHWND));
+                                        cursorpos=1+(selectchar[0]=selectchar[1]);
+                                    }
                                 }else{
-                                    unknowntext.setString(filebody.replace(selectchar[1], selectchar[0]-selectchar[1], (char*)(GetClipboardData(CF_TEXT))));
-                                    cursorpos=1+(selectchar[0]=selectchar[1]);
+                                    int i=filebody.length();
+                                    unknowntext.setString(filebody.insert(cursorpos, clipHWND));
+                                    i=filebody.length()-i;
+                                    if(!TOPBuffer.empty()){
+                                        removeRemoved();
+                                        TOPBuffer.push_back(ito(cursorpos, clipHWND, 0, 1));
+                                        if(!(TOPBuffer.size()-1))
+                                            TOPBufferit=TOPBuffer.begin();
+                                        else
+                                            TOPBufferit++;
+                                    }else{
+                                        TOPBuffer.push_back(ito(cursorpos, clipHWND, 0, 1));
+                                        if(!(TOPBuffer.size()-1))
+                                            TOPBufferit=TOPBuffer.begin();
+                                        else
+                                            TOPBufferit++;
+                                    }
+                                    cursorpos+=i;
                                 }
-                            }else{
-                            int i=filebody.length();
-                                unknowntext.setString(filebody.insert(cursorpos, (char*)(GetClipboardData(CF_TEXT))));
-                                i=filebody.length()-i;
-                                cursorpos+=i;
+                                textpointerSprite.setPosition(unknowntext.findCharacterPos(cursorpos));
+                                centerText();
                             }
-                            textpointerSprite.setPosition(unknowntext.findCharacterPos(cursorpos));
-                            centerText();
                             CloseClipboard();
                         }
                     }else
@@ -851,22 +955,73 @@ int main()
                         cout<<"\ntype track\\/\n";
                         infotext.setString("track=");
                         crypting=saving;
+                    }else
+                    if((event.text.unicode==25)&&((sf::Keyboard::isKeyPressed(sf::Keyboard::LControl))||(sf::Keyboard::isKeyPressed(sf::Keyboard::RControl)))){
+                        if((TOPBufferit==TOPBuffer.begin())&&((*TOPBufferit).undoned)){
+                            (*TOPBufferit).ctrlz(1);
+                        }else{
+                            TOPBufferit++;
+                            if(TOPBufferit!=TOPBuffer.end()){
+                                (*TOPBufferit).ctrlz(1);
+                            }else
+                                TOPBufferit--;
+                        }
+
+                        centerText();
+                    }else
+                    if((event.text.unicode==26)&&((sf::Keyboard::isKeyPressed(sf::Keyboard::LControl))||(sf::Keyboard::isKeyPressed(sf::Keyboard::RControl)))){
+                        (*TOPBufferit).ctrlz();
+                        if(TOPBufferit!=TOPBuffer.begin())
+                            TOPBufferit--;
+
+                        centerText();
                     }
                     else{
                         unsigned char etu=event.text.unicode;
-                        if(etu==13)etu=10;
+                        if(etu==13)etu=10;//system("cls");
                         if(selectchar[0]!=selectchar[1]){
-                            if(selectchar[0]<selectchar[1]){
-                                unknowntext.setString(filebody.replace(selectchar[0], selectchar[1]-selectchar[0], 1, etu));
-                                cursorpos=1+(selectchar[1]=selectchar[0]);
+                            bool biggerselch=(selectchar[0]<selectchar[1]);
+
+                            if(!TOPBuffer.empty()){
+                                removeRemoved();
+                                TOPBuffer.push_back(ito(selectchar[!biggerselch], filebody.substr(selectchar[!biggerselch], selectchar[biggerselch]-selectchar[!biggerselch]), 1));
+                                TOPBuffer.push_back(ito(selectchar[!biggerselch], etu, 0));
+                                TOPBufferit++; TOPBufferit++;
                             }else{
-                                unknowntext.setString(filebody.replace(selectchar[1], selectchar[0]-selectchar[1], 1, etu));
-                                cursorpos=1+(selectchar[0]=selectchar[1]);
+                                TOPBuffer.push_back(ito(selectchar[!biggerselch], filebody.substr(selectchar[!biggerselch], selectchar[biggerselch]-selectchar[!biggerselch]), 1));
+                                TOPBuffer.push_back(ito(selectchar[!biggerselch], etu, 0));
+                                TOPBufferit=TOPBuffer.begin(); TOPBufferit++;
                             }
+                            unknowntext.setString(filebody.replace(selectchar[!biggerselch], selectchar[biggerselch]-selectchar[!biggerselch], 1, etu));
+                            cursorpos=1+(selectchar[biggerselch]=selectchar[!biggerselch]);
                         }else{
                             unknowntext.setString(filebody.insert(cursorpos, 1, etu));
+                            if(!TOPBuffer.empty()){
+                                removeRemoved();
+                                if((TOPBuffer.size())&&(!(*TOPBufferit).removing)&&(!(*TOPBufferit).pasted)&&((*TOPBufferit).oprange+(*TOPBufferit).opdata.length()==cursorpos)){
+                                    (*TOPBufferit).opdata+=etu;
+                                }else{
+                                    TOPBuffer.push_back(ito(cursorpos, etu, 0));
+                                    if(!(TOPBuffer.size()-1))
+                                        TOPBufferit=TOPBuffer.begin();
+                                    else
+                                        TOPBufferit++;
+                                }
+                            }else{
+                                TOPBuffer.push_back(ito(cursorpos, etu, 0));
+                                TOPBufferit=TOPBuffer.begin();
+                            }
                             cursorpos++;
-                        }
+                        }/*cout<<TOPBuffer.size()<<"\n";
+                        for(list<ito>::iterator i=TOPBuffer.begin(); i!=TOPBuffer.end(); ++i){
+                            cout<<"\n-------------------------\n";
+                            cout<<"undoned ="<<(*i).undoned<<'\n';
+                            cout<<"removing="<<(*i).removing<<'\n';
+                            cout<<"pasted=  "<<(*i).pasted<<'\n';
+                            cout<<"oprange= "<<(*i).oprange<<'\n';
+                            cout<<"opdata=  "<<(*i).opdata<<'\n';
+                            cout<<"-------------------------\n";
+                        }*/
 
                         textpointerSprite.setPosition(unknowntext.findCharacterPos(cursorpos));
                     }
@@ -933,6 +1088,17 @@ int main()
                     spriteScale=1;
                     sprite.setPosition(0,40);
                     sprite.setScale(1,1);
+                }else
+                if((event.text.unicode==19)&&((sf::Keyboard::isKeyPressed(sf::Keyboard::LControl))||(sf::Keyboard::isKeyPressed(sf::Keyboard::RControl)))){
+                    sf::Image image=texture.copyToImage();
+                    sf::Vector2u imgsize=image.getSize();
+                    if((imgsize.x<11)&&(filebody.length()+4<=(imgsize.x*imgsize.y)*3/8)){
+                        unsigned int steganosize=filebody.size();
+                        sf::Color nextclr;
+                        for(int i=0; i<32; i++){
+                            nextclr=image.getPixel(i%imgsize.x, i/imgsize.x);
+                        }
+                    }else cout<<"Image is too small for this message.\n";
                 }
             }else
             if(event.type==sf::Event::KeyPressed){
@@ -995,8 +1161,32 @@ int main()
                     }
                     if(event.key.code==sf::Keyboard::Delete){
                         if(cursorpos<filebody.length()){
+                            bool biggerselch=(selectchar[0]<selectchar[1]);
+
+                            removeRemoved();
+                            if(selectchar[0]!=selectchar[1]){
+                                if(TOPBuffer.empty()){
+                                    TOPBuffer.push_back(ito(selectchar[!biggerselch], filebody.substr(selectchar[!biggerselch], selectchar[biggerselch]-selectchar[!biggerselch]+1), 1));
+                                    TOPBufferit=TOPBuffer.begin();
+                                }else{
+                                    TOPBuffer.push_back(ito(selectchar[!biggerselch], filebody.substr(selectchar[!biggerselch], selectchar[biggerselch]-selectchar[!biggerselch]+1), 1));
+                                    TOPBufferit++;
+                                }
+                                unknowntext.setString(filebody.erase(selectchar[!biggerselch], selectchar[biggerselch]-selectchar[!biggerselch]+1));
+                                cursorpos=selectchar[!biggerselch];
+                            }else{
+                                if(((*TOPBufferit).oprange==cursorpos)&&((*TOPBufferit).removing)&&(!(*TOPBufferit).pasted)){
+                                    (*TOPBufferit).opdata+=filebody[cursorpos];
+                                }else{
+                                    TOPBuffer.push_back(ito(cursorpos, filebody[cursorpos], 1));
+                                    TOPBufferit++;
+                                }
+                            }
                             filebody.erase(cursorpos, 1);
                             unknowntext.setString(filebody);
+                            textpointerSprite.setPosition(unknowntext.findCharacterPos(cursorpos));
+                            selecting=0;
+                            centerText();
                         }
                     }else
                     if((event.key.code==sf::Keyboard::LShift)&&(!selecting)){
