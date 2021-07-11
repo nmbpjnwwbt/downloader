@@ -1,3 +1,8 @@
+unsafe: can't use https
+
+
+
+
 # downloader
 downloads files and en/decrypts it
 
